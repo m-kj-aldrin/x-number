@@ -7,4 +7,7 @@ declare global {
   interface HTMLInputEvent extends InputEvent {
     target: HTMLElement;
   }
+  interface HTMLKeyboardEvent extends KeyboardEvent {
+    target: HTMLElement;
+  }
 }

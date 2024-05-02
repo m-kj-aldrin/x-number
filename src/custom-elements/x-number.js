@@ -22,6 +22,17 @@ customNumbertemplate.innerHTML = `
 <div contenteditable="true"></div>
 `;
 
+/**@param {HTMLElement} elem */
+function setCaretAtEnd(elem) {
+  const range = document.createRange(); // Create a range (a range is a like the selection but invisible)
+  const selection = window.getSelection(); // Get the current selection
+  range.selectNodeContents(elem); // Select the entire contents of the element
+  range.collapse(false); // Collapse the range to the end point. False means collapse to end rather than the start
+  selection.removeAllRanges(); // Remove all selections before we add our new range
+  selection.addRange(range); // Add the new range
+  elem.focus(); // Optional: if the element can receive focus
+}
+
 export class CustomNumberElement extends HTMLElement {
   #value = 0;
 
@@ -45,6 +56,30 @@ export class CustomNumberElement extends HTMLElement {
 
   #attachListeners() {
     this.shadowRoot.addEventListener("input", this.#handelEditInput.bind(this));
+    this.shadowRoot.addEventListener("keydown", this.#handleKeyDown.bind(this));
+  }
+
+  #emitInput() {
+    this.dispatchEvent(new InputEvent("input", { bubbles: true }));
+  }
+
+  #updateEditElement() {
+    this.shadowRoot.querySelector(
+      "[contenteditable='true']"
+    ).textContent = `${this.value}`;
+  }
+
+  /**@param {HTMLKeyboardEvent} e  */
+  #handleKeyDown(e) {
+    let key = e.key;
+    if (key == "ArrowUp" || key == "ArrowDown") {
+      e.preventDefault();
+      let direction = key == "ArrowUp" ? 1 : -1;
+      this.value += direction;
+      this.#updateEditElement();
+      setCaretAtEnd(e.target);
+      this.#emitInput();
+    }
   }
 
   /**@param {HTMLInputEvent} e */
@@ -55,7 +90,7 @@ export class CustomNumberElement extends HTMLElement {
 
       if (matchArray.length) {
         this.value = parseFloat(matchArray[0]);
-        this.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        this.#emitInput();
       }
     }
   }
